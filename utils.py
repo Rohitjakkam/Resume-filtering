@@ -8,6 +8,49 @@ from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
 from sklearn.metrics.pairwise import cosine_similarity
 
 
+def extract_contact_info(text):
+    """Extract email addresses and phone numbers from resume text.
+
+    Returns:
+        Dict with 'email' (str or '') and 'phone' (str or '').
+    """
+    # Email: standard pattern
+    email_match = re.search(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", text)
+    email = email_match.group(0) if email_match else ""
+
+    # Phone: flexible pattern for various formats
+    # Matches: +1-234-567-8901, (234) 567-8901, 234-567-8901, 234.567.8901, 2345678901
+    phone_match = re.search(
+        r"(?:\+?\d{1,3}[\s\-.]?)?\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}", text
+    )
+    phone = phone_match.group(0).strip() if phone_match else ""
+
+    return {"email": email, "phone": phone}
+
+
+def extract_experience_years(text):
+    """Extract years of experience mentioned in resume text.
+
+    Looks for patterns like '5 years', '3+ years of experience',
+    '5-7 years experience', etc.
+
+    Returns:
+        Float representing the max years found, or 0.0 if none detected.
+    """
+    patterns = [
+        r"(\d{1,2})\+?\s*(?:years|yrs)[\s\w]*(?:experience|exp)",
+        r"(\d{1,2})\s*-\s*\d{1,2}\s*(?:years|yrs)",
+        r"(\d{1,2})\+?\s*(?:years|yrs)",
+    ]
+    years_found = []
+    text_lower = text.lower()
+    for pattern in patterns:
+        matches = re.findall(pattern, text_lower)
+        years_found.extend(int(m) for m in matches)
+
+    return float(max(years_found)) if years_found else 0.0
+
+
 def extract_text_from_pdf(file_bytes):
     """Extract text from PDF file bytes."""
     try:
